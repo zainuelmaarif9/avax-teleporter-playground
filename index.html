@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avalanche L1 & Teleporter Playground & Visualizer</title>
+  <meta name="description" content="An interactive simulator and Solidity code generator for Avalanche Warp Messaging and L1 Teleporter protocol. Model your custom subnet topology and calculate Retro9000 rewards.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header" id="app-header">
+      <div class="header-brand">
+        <div class="logo-container">
+          <svg class="logo-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 22h20L12 2zm0 4.67l7.33 12.66H4.67L12 6.67zM12 9.5l-4.5 7.78h9L12 9.5z"/>
+          </svg>
+        </div>
+        <div class="brand-details">
+          <h1>AVAX Teleporter Playground</h1>
+          <p>Avalanche L1 Interchain Messaging Visualizer <span class="badge-version">Etna/Avax9000</span></p>
+        </div>
+      </div>
+      
+      <div class="header-stats">
+        <div class="stat-item">
+          <span class="stat-label">Total simulated burn</span>
+          <span class="stat-val highlight-avax" id="stat-total-burn">0.00 AVAX</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Active L1 subnets</span>
+          <span class="stat-val" id="stat-active-subnets">3</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Relayer latency</span>
+          <span class="stat-val highlight-teleporter" id="stat-relayer-latency">~1.2s</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid Dashboard -->
+    <main class="dashboard-grid" id="dashboard-grid">
+      
+      <!-- Left Sidebar: Configurations -->
+      <aside class="dashboard-panel" id="config-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Topology Config
+          </div>
+        </div>
+        
+        <div class="panel-body">
+          <!-- Subnets/L1 List -->
+          <div class="control-group">
+            <span class="control-label">Avalanche L1 Networks</span>
+            <div class="subnets-list" id="subnets-list">
+              <!-- Subnet items loaded dynamically -->
+            </div>
+            <button class="btn-add-subnet" id="btn-add-subnet">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Deploy Custom L1 Chain
+            </button>
+          </div>
+
+          <!-- Message Parameters -->
+          <div class="control-group">
+            <label class="control-label" for="param-msg-type">Teleporter Message Type</label>
+            <select class="input-select" id="param-msg-type">
+              <option value="basic">Basic String (Text Payload)</option>
+              <option value="erc20">Cross-Chain ERC-20 Bridge</option>
+              <option value="struct">Custom Data Struct (Multi-argument)</option>
+            </select>
+          </div>
+
+          <!-- Source & Destination Selection -->
+          <div class="control-group">
+            <label class="control-label" for="param-source">Source L1 Chain</label>
+            <select class="input-select" id="param-source"></select>
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="param-dest">Destination L1 Chain</label>
+            <select class="input-select" id="param-dest"></select>
+          </div>
+
+          <!-- Validator count slider -->
+          <div class="control-group">
+            <label class="control-label" for="param-validators">
+              BLS Validator Set Size
+              <span class="control-label-info" id="val-validator-count">12 nodes</span>
+            </label>
+            <input type="range" class="input-range" id="param-validators" min="4" max="24" value="12">
+          </div>
+
+          <!-- Fee Mechanism -->
+          <div class="control-group">
+            <label class="control-label" for="param-fee-token">Relayer Fee Payment Token</label>
+            <select class="input-select" id="param-fee-token">
+              <option value="AVAX">AVAX (Default Core fee)</option>
+              <option value="L1_GAS">Native L1 Custom Gas Token</option>
+            </select>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Panel: Interactive Simulation Canvas -->
+      <section class="dashboard-panel canvas-panel" id="center-panel">
+        <!-- Steps Indicator Header -->
+        <div class="simulation-steps-overlay">
+          <div class="step-indicator" id="step-0">
+            <span class="step-num">Step 1</span>
+            <span class="step-name">Tx Dispatch</span>
+          </div>
+          <div class="step-indicator" id="step-1">
+            <span class="step-num">Step 2</span>
+            <span class="step-name">BLS Signing</span>
+          </div>
+          <div class="step-indicator" id="step-2">
+            <span class="step-num">Step 3</span>
+            <span class="step-name">Relay Message</span>
+          </div>
+          <div class="step-indicator" id="step-3">
+            <span class="step-num">Step 4</span>
+            <span class="step-name">Warp Receive</span>
+          </div>
+        </div>
+
+        <div class="visual-canvas-container" id="canvas-container">
+          <!-- Simulation Interactive SVG Canvas -->
+          <svg class="simulation-svg" id="simulation-svg" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e84142" />
+                <stop offset="100%" stop-color="#ff6b6b" />
+              </linearGradient>
+              <linearGradient id="teleporterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#8f00ff" />
+                <stop offset="100%" stop-color="#d162ff" />
+              </linearGradient>
+              <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#4facfe" />
+                <stop offset="100%" stop-color="#00f2fe" />
+              </linearGradient>
+              <radialGradient id="glowGrad">
+                <stop offset="0%" stop-color="#8f00ff" stop-opacity="0.3" />
+                <stop offset="100%" stop-color="#8f00ff" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <g id="connections-group"></g>
+            <g id="validators-group"></g>
+            <g id="chains-group"></g>
+            <g id="packets-group"></g>
+          </svg>
+        </div>
+
+        <!-- Controls -->
+        <div class="simulation-controls-overlay">
+          <button class="sim-btn btn-play" id="btn-play-sim">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Trigger Teleport
+          </button>
+          <button class="sim-btn" id="btn-reset-sim" disabled>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6"></path>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            Reset Flow
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Panel: Code & Math Tabs -->
+      <section class="dashboard-panel" id="right-panel">
+        <nav class="tabs-container">
+          <button class="tab-btn active" id="tab-btn-code">
+            Solidity templates
+          </button>
+          <button class="tab-btn" id="tab-btn-calc">
+            Retro9000 Economics
+          </button>
+        </nav>
+
+        <div class="panel-body">
+          <!-- Code View Tab Content -->
+          <div class="tab-content active" id="tab-content-code">
+            <div class="code-viewer-panel">
+              <div class="code-selector-bar">
+                <div class="code-btn-group">
+                  <button class="code-tab-toggle active" id="code-toggle-sender">SenderContract.sol</button>
+                  <button class="code-tab-toggle" id="code-toggle-receiver">ReceiverContract.sol</button>
+                </div>
+                <button class="btn-copy" id="btn-copy-code">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  Copy Code
+                </button>
+              </div>
+              
+              <div class="code-block-container">
+                <code class="code-display" id="code-display"></code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Economics & Calculator Tab Content -->
+          <div class="tab-content" id="tab-content-calc">
+            <div class="calc-panel">
+              <div class="calc-grid">
+                <!-- Inputs -->
+                <div class="calc-input-card">
+                  <h3 class="calc-title">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+                      <line x1="12" y1="18" x2="12" y2="12"></line>
+                      <line x1="9" y1="15" x2="15" y2="15"></line>
+                      <line x1="12" y1="6" x2="12" y2="6"></line>
+                    </svg>
+                    Simulation Volume & Staking
+                  </h3>
+                  
+                  <div class="control-group">
+                    <label class="control-label" for="calc-tx-volume">
+                      Projected Interchain Messages / Day
+                      <span class="control-label-info" id="val-tx-volume">5,000 txs</span>
+                    </label>
+                    <input type="range" class="input-range" id="calc-tx-volume" min="100" max="100000" step="100" value="5000">
+                  </div>
+
+                  <div class="control-group">
+                    <label class="control-label" for="calc-avg-gas">
+                      Average Message Gas Units (on dest)
+                      <span class="control-label-info" id="val-avg-gas">150,000 gas</span>
+                    </label>
+                    <input type="range" class="input-range" id="calc-avg-gas" min="50000" max="1000000" step="10000" value="150000">
+                  </div>
+
+                  <div class="control-group">
+                    <label class="control-label" for="calc-avax-price">
+                      AVAX Token Price (USD)
+                      <span class="control-label-info" id="val-avax-price">$35.00</span>
+                    </label>
+                    <input type="range" class="input-range" id="calc-avax-price" min="5" max="150" step="1" value="35">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Output Results -->
+              <div class="calc-results-section">
+                <div class="result-card burn">
+                  <div class="result-details">
+                    <span class="result-label">Est. Network Gas Burned</span>
+                    <span class="result-desc">Value of AVAX burned per year</span>
+                  </div>
+                  <div class="result-value-container">
+                    <span class="result-value" id="calc-out-burn">24.50</span>
+                    <span class="result-unit">AVAX/yr</span>
+                  </div>
+                </div>
+
+                <div class="result-card reward">
+                  <div class="result-details">
+                    <span class="result-label">Retro9000 Reward Projection</span>
+                    <span class="result-desc">Based on 80% developer rebate rate</span>
+                  </div>
+                  <div class="result-value-container">
+                    <span class="result-value" id="calc-out-rebate">$686</span>
+                    <span class="result-unit">USD/yr</span>
+                  </div>
+                </div>
+
+                <div class="result-card savings">
+                  <div class="result-details">
+                    <span class="result-label">Gas Savings vs Ethereum L2</span>
+                    <span class="result-desc">Avalanche9000 optimized subnet fee advantage</span>
+                  </div>
+                  <div class="result-value-container">
+                    <span class="result-value" id="calc-out-savings">94.2</span>
+                    <span class="result-unit">% cheaper</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Retro9000 Info Box -->
+              <div class="info-callout">
+                <div class="info-callout-icon">💡</div>
+                <div class="info-callout-text">
+                  <strong>Retro9000 Program:</strong> Avalanche foundation rewards developers of L1 Blockchains and dApps directly proportional to the amount of network transaction fee burn generated on their networks. Accelerate usage to earn higher payouts.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </main>
+  </div>
+
+  <!-- Modal for Deploying Custom L1 -->
+  <div id="modal-add-subnet" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div style="background: #12121a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 2rem; width: 400px; display: flex; flex-direction: column; gap: 1.25rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);">
+      <h3 style="color: #fff; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#e84142" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        Deploy Custom L1 Subnet
+      </h3>
+      <div class="control-group">
+        <label class="control-label" for="modal-subnet-name">L1 Blockchain Name</label>
+        <input type="text" class="input-text" id="modal-subnet-name" placeholder="e.g., Apex Gaming L1">
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="modal-subnet-token">Gas Token Symbol</label>
+        <input type="text" class="input-text" id="modal-subnet-token" placeholder="e.g., APEX">
+      </div>
+      <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+        <button class="sim-btn" id="modal-cancel-btn" style="flex: 1; border: 1px solid var(--card-border);">Cancel</button>
+        <button class="sim-btn btn-play" id="modal-confirm-btn" style="flex: 1;">Deploy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
